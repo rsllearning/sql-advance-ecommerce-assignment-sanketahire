@@ -800,6 +800,80 @@ Expected Output (After COMMIT):
 */
 
 
+-- ========================================================
+-- Section 10: SQL Triggers
+-- ========================================================
+
+-- Task 19: Create a trigger that automatically records new orders in an Order_Audit table whenever a new order is inserted.
+
+-- 1. Create Order_Audit table to store logged transactions
+DROP TABLE IF EXISTS Order_Audit;
+CREATE TABLE Order_Audit (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    customer_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    order_date DATE NOT NULL,
+    action_type VARCHAR(20) DEFAULT 'INSERT',
+    action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Create AFTER INSERT trigger on Orders table
+DROP TRIGGER IF EXISTS trg_after_order_insert;
+
+DELIMITER //
+CREATE TRIGGER trg_after_order_insert
+AFTER INSERT ON Orders
+FOR EACH ROW
+BEGIN
+    INSERT INTO Order_Audit (
+        order_id,
+        customer_id,
+        product_id,
+        quantity,
+        order_date,
+        action_type,
+        action_timestamp
+    ) VALUES (
+        NEW.order_id,
+        NEW.customer_id,
+        NEW.product_id,
+        NEW.quantity,
+        NEW.order_date,
+        'INSERT',
+        NOW()
+    );
+END //
+DELIMITER ;
+
+-- 3. Test Trigger Execution: Insert a new order record into Orders
+INSERT INTO Orders (customer_id, product_id, quantity, order_date) 
+VALUES (1, 1, 2, '2024-05-15');
+
+-- 4. Verify that the order event was automatically recorded in Order_Audit
+SELECT 
+    audit_id,
+    order_id,
+    customer_id,
+    product_id,
+    quantity,
+    order_date,
+    action_type,
+    action_timestamp
+FROM Order_Audit;
+/*
+Expected Output:
++----------+----------+-------------+------------+----------+------------+-------------+---------------------+
+| audit_id | order_id | customer_id | product_id | quantity | order_date | action_type | action_timestamp    |
++----------+----------+-------------+------------+----------+------------+-------------+---------------------+
+|        1 |       23 |           1 |          1 |        2 | 2024-05-15 | INSERT      | 2026-10-15 22:00:39 |
++----------+----------+-------------+------------+----------+------------+-------------+---------------------+
+1 row in set
+*/
+
+
+
 
 
 

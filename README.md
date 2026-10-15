@@ -815,6 +815,83 @@ erDiagram
 * **Execution Screenshot (Mandatory Deliverable 8 - Transaction COMMIT / ROLLBACK):**
   ![Transaction Execution Output](screenshots/08_transaction_rollback_commit_task18.png)
 
+---
+
+### Section 10: SQL Triggers
+
+#### Task 19: Create a trigger that automatically records new orders in an Order_Audit table whenever a new order is inserted
+* **Description:** Implements an automated audit logging pipeline using a row-level `AFTER INSERT` trigger (`trg_after_order_insert`). Whenever a client application places an order into the `Orders` table, the trigger autonomously intercepts the transaction context and appends a duplicate audit record into `Order_Audit` containing the new order attributes and system timestamp (`NOW()`). This pattern guarantees compliance, traceability, and non-repudiation without requiring application-level logging code.
+
+* **Database Objects & Trigger Definition:**
+  ```sql
+  -- 1. Create dedicated Order_Audit table
+  DROP TABLE IF EXISTS Order_Audit;
+  CREATE TABLE Order_Audit (
+      audit_id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      customer_id INT NOT NULL,
+      product_id INT NOT NULL,
+      quantity INT NOT NULL,
+      order_date DATE NOT NULL,
+      action_type VARCHAR(20) DEFAULT 'INSERT',
+      action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
+  -- 2. Create AFTER INSERT trigger
+  DROP TRIGGER IF EXISTS trg_after_order_insert;
+
+  DELIMITER //
+  CREATE TRIGGER trg_after_order_insert
+  AFTER INSERT ON Orders
+  FOR EACH ROW
+  BEGIN
+      INSERT INTO Order_Audit (
+          order_id,
+          customer_id,
+          product_id,
+          quantity,
+          order_date,
+          action_type,
+          action_timestamp
+      ) VALUES (
+          NEW.order_id,
+          NEW.customer_id,
+          NEW.product_id,
+          NEW.quantity,
+          NEW.order_date,
+          'INSERT',
+          NOW()
+      );
+  END //
+  DELIMITER ;
+
+  -- 3. Test Trigger: Place a new order
+  INSERT INTO Orders (customer_id, product_id, quantity, order_date) 
+  VALUES (1, 1, 2, '2024-05-15');
+
+  -- 4. Inspect audit ledger to verify autonomous capture
+  SELECT 
+      audit_id,
+      order_id,
+      customer_id,
+      product_id,
+      quantity,
+      order_date,
+      action_type,
+      action_timestamp
+  FROM Order_Audit;
+  ```
+
+* **Execution Output:**
+  | audit_id | order_id | customer_id | product_id | quantity | order_date | action_type | action_timestamp |
+  | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+  | 1 | 23 | 1 | 1 | 2 | 2024-05-15 | INSERT | 2026-10-15 22:00:39 |
+  *(1 row logged automatically in audit table upon order creation)*
+
+* **Execution Screenshot (Mandatory Deliverable 9 - Trigger Execution):**
+  ![Trigger Execution Output](screenshots/09_trigger_execution_task19.png)
+
+
 
 
 
