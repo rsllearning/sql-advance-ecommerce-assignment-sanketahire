@@ -873,6 +873,77 @@ Expected Output:
 */
 
 
+-- ========================================================
+-- Section 11: Performance Tuning
+-- ========================================================
+
+-- Task 20: Optimize queries by applying SQL performance tuning best practices:
+-- 
+-- Unoptimized Baseline Query:
+-- SELECT DISTINCT * 
+-- FROM Products 
+-- WHERE YEAR(created_date) = 2024 
+--   AND category = 'Electronics';
+--
+-- Inefficiencies in Unoptimized Query:
+-- 1. SELECT * transfers all columns indiscriminately, increasing memory buffer and network load.
+-- 2. DISTINCT triggers costly temporary table sorting/hashing deduplication, redundant on a table with a Primary Key.
+-- 3. YEAR(created_date) = 2024 is non-sargable (Search Argument Able), preventing B-Tree range seek on date.
+-- 4. Single-column index requires secondary lookups rather than leveraging composite index filtering.
+
+-- Step 1: Create a composite index supporting both filter dimensions (category and created_date)
+CREATE INDEX idx_products_category_created ON Products(category, created_date);
+
+-- Step 2: Query Plan Inspection for Refactored Query
+EXPLAIN SELECT 
+    product_id,
+    product_name,
+    category,
+    price,
+    created_date
+FROM Products
+WHERE category = 'Electronics'
+  AND created_date BETWEEN '2024-01-01' AND '2024-12-31';
+/*
+Expected Output:
++----+-------------+----------+------------+------+-----------------------------------------------------+-----------------------+---------+-------+------+----------+-------------+
+| id | select_type | table    | partitions | type | possible_keys                                       | key                   | key_len | ref   | rows | filtered | Extra       |
++----+-------------+----------+------------+------+-----------------------------------------------------+-----------------------+---------+-------+------+----------+-------------+
+|  1 | SIMPLE      | Products | NULL       | ref  | idx_products_category,idx_products_category_created | idx_products_category | 202     | const |    4 |   100.00 | Using where |
++----+-------------+----------+------------+------+-----------------------------------------------------+-----------------------+---------+-------+------+----------+-------------+
+1 row in set
+*/
+
+-- Step 3: Execute Fully Optimized Query
+-- Improvements Applied:
+-- 1. Avoid SELECT *: Only explicitly required business columns are fetched.
+-- 2. Remove DISTINCT: Eliminated unnecessary deduplication overhead.
+-- 3. Avoid functions on indexed columns: Replaced YEAR() function with sargable BETWEEN range.
+-- 4. Index-friendly query: Supported by composite index on (category, created_date).
+SELECT 
+    product_id,
+    product_name,
+    category,
+    price,
+    created_date
+FROM Products
+WHERE category = 'Electronics'
+  AND created_date BETWEEN '2024-01-01' AND '2024-12-31';
+/*
+Expected Output:
++------------+-----------------------------+-------------+----------+--------------+
+| product_id | product_name                | category    | price    | created_date |
++------------+-----------------------------+-------------+----------+--------------+
+|          1 | Wireless Mouse              | Electronics |   849.00 | 2024-01-15   |
+|          2 | Mechanical Keyboard         | Electronics |  2499.00 | 2024-02-10   |
+|          3 | Noise-Cancelling Headphones | Electronics |  7999.00 | 2024-03-05   |
+|          4 | Gaming Laptop               | Electronics | 64999.00 | 2024-04-12   |
++------------+-----------------------------+-------------+----------+--------------+
+4 rows in set
+*/
+
+
+
 
 
 

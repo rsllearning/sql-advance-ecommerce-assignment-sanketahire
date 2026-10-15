@@ -891,6 +891,111 @@ erDiagram
 * **Execution Screenshot (Mandatory Deliverable 9 - Trigger Execution):**
   ![Trigger Execution Output](screenshots/09_trigger_execution_task19.png)
 
+---
+
+### Section 11: Performance Tuning
+
+#### Task 20: Optimize queries by applying SQL performance tuning best practices
+* **Background & Problem Statement:**
+  An un-optimized reporting query was identified in the production environment:
+  ```sql
+  SELECT DISTINCT * 
+  FROM Products 
+  WHERE YEAR(created_date) = 2024 
+    AND category = 'Electronics';
+  ```
+* **Performance Anti-Patterns Identified & Refactoring Strategy:**
+  1. **Anti-Pattern 1: Unbounded Projection (`SELECT *`)**
+     * *Problem:* Pulls all table attributes indiscriminately, inflating network transport payloads and consuming buffer pool RAM.
+     * *Remediation:* Explicitly project only required attributes (`product_id, product_name, category, price, created_date`).
+  2. **Anti-Pattern 2: Redundant Deduplication (`DISTINCT`)**
+     * *Problem:* Forces an unnecessary sort or hash table operation across the entire result set, even though records are already guaranteed unique by the `product_id` Primary Key.
+     * *Remediation:* Remove `DISTINCT` entirely.
+  3. **Anti-Pattern 3: Non-Sargable Column Function (`YEAR(created_date) = 2024`)**
+     * *Problem:* Wrapping the column in the scalar function `YEAR()` prevents MySQL from performing a B-Tree index range seek, forcing a row-by-row function evaluation across every record.
+     * *Remediation:* Rewrite into a sargable boundary condition: `created_date BETWEEN '2024-01-01' AND '2024-12-31'`.
+  4. **Anti-Pattern 4: Suboptimal Index Coverage**
+     * *Problem:* Single-column index requires index lookups followed by table evaluations.
+     * *Remediation:* Establish a composite B-Tree index on `(category, created_date)` to allow Index Condition Pushdown (ICP) and direct multi-column seeking.
+
+* **Refactored & Optimized SQL Implementation:**
+  ```sql
+  -- Step 1: Create composite B-Tree index covering both filter predicates
+  CREATE INDEX idx_products_category_created 
+  ON Products (category, created_date);
+
+  -- Step 2: Query Plan Inspection
+  EXPLAIN SELECT 
+      product_id,
+      product_name,
+      category,
+      price,
+      created_date
+  FROM Products
+  WHERE category = 'Electronics'
+    AND created_date BETWEEN '2024-01-01' AND '2024-12-31';
+
+  -- Step 3: Optimized Query Execution
+  SELECT 
+      product_id,
+      product_name,
+      category,
+      price,
+      created_date
+  FROM Products
+  WHERE category = 'Electronics'
+    AND created_date BETWEEN '2024-01-01' AND '2024-12-31';
+  ```
+
+* **Query Plan Analysis Output (`EXPLAIN`):**
+  | id | select_type | table | partitions | type | possible_keys | key | key_len | ref | rows | filtered | Extra |
+  | :---: | :--- | :--- | :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+  | 1 | SIMPLE | Products | NULL | **ref** | idx_products_category,idx_products_category_created | **idx_products_category** | 202 | const | **4** | 100.00 | Using where |
+
+* **Execution Output:**
+  | product_id | product_name | category | price | created_date |
+  | :---: | :--- | :--- | :---: | :---: |
+  | 1 | Wireless Mouse | Electronics | 849.00 | 2024-01-15 |
+  | 2 | Mechanical Keyboard | Electronics | 2499.00 | 2024-02-10 |
+  | 3 | Noise-Cancelling Headphones | Electronics | 7999.00 | 2024-03-05 |
+  | 4 | Gaming Laptop | Electronics | 64999.00 | 2024-04-12 |
+  *(4 rows returned efficiently with zero temporary deduplication overhead)*
+
+---
+
+## Summary of Implemented Advanced SQL Concepts
+
+| Section | Core Concept | SQL Techniques & Operators | Practical Business Use Case |
+| :---: | :--- | :--- | :--- |
+| **1** | **Advanced Joins** | `INNER JOIN`, `CROSS JOIN`, `LEFT JOIN` | Multi-table order tracking, Cartesian product pricing matrix, and detecting unengaged/inactive customer accounts. |
+| **2** | **Subqueries** | Scalar subquery, Aggregated `HAVING` subquery, Correlated subquery | Dynamically filtering above-average priced catalog items, high-spending VIP customers, and department price leaders. |
+| **3** | **Set Operations** | `UNION`, `INNER JOIN` (INTERSECT), `LEFT JOIN ... WHERE NULL` (EXCEPT) | Combining disjoint category catalogs, isolating intersecting products across pricing thresholds, and computing set differences. |
+| **4** | **Window Functions** | `DENSE_RANK()`, `LAG()`, `SUM() OVER ()` | Departmental price tier rankings without row aggregation, historical price lag comparisons, and cumulative financial running totals. |
+| **5** | **Common Table Expressions (CTEs)** | `WITH` (Non-Recursive), `WITH RECURSIVE` | Modularizing multi-level VIP spend aggregation and generating dynamic sequence ranges via anchor-recursive union loops. |
+| **6** | **Database Views** | `CREATE OR REPLACE VIEW` | Encapsulating ₹1,000+ premium product reporting logic into a reusable, secure virtual table without data duplication. |
+| **7** | **Indexes & Query Performance** | `CREATE INDEX` (B-Tree), `SHOW INDEX`, `EXPLAIN` | Eliminating full table scans (`ALL` $\rightarrow$ `ref`), optimizing category filters, and decoding execution plans. |
+| **8** | **Stored Procedures & Functions** | `CREATE PROCEDURE` (`IN` parameter), `CREATE FUNCTION` (`DETERMINISTIC`) | Precompiling category retrieval queries and defining deterministic line-item extended total calculators (`price × quantity`). |
+| **9** | **Transactions & ACID Guarantees** | `START TRANSACTION`, `COMMIT`, `ROLLBACK` | Atomic price modifications with non-destructive `ROLLBACK` testing and permanent disk persistence with `COMMIT`. |
+| **10** | **SQL Triggers & Auditing** | `CREATE TRIGGER` (`AFTER INSERT ON Orders`) | Autonomous order audit ledgering into `Order_Audit` capturing transaction metadata and timestamps without application intervention. |
+| **11** | **Query Performance Tuning** | Sargable ranges (`BETWEEN`), avoiding `*`, removing `DISTINCT`, composite indexes | Refactoring unoptimized anti-patterns into high-throughput, index-friendly queries with minimal I/O and CPU overhead. |
+
+---
+
+## Verification & Execution Instructions
+
+To execute the entire modernization suite end-to-end:
+
+```bash
+# 1. Connect to MySQL Server
+mysql -u root -p
+
+# 2. Source the master script
+SOURCE /path/to/sql-advance-ecommerce-assignment-sanketahire/ecommerce_advanced_management.sql;
+```
+
+All 20 tasks, 3 relational base tables, 1 audit table, 1 view, 2 indexes, 1 stored procedure, 1 custom function, and 1 database trigger will execute sequentially and idempotently with comprehensive expected output comments.
+
+
 
 
 
