@@ -414,3 +414,78 @@ Expected Output:
 +------------+----------------+-------------+--------+
 1 row in set
 */
+
+
+-- ========================================================
+-- Section 4: Window Functions
+-- ========================================================
+
+-- Task 9: Rank products by price within each category.
+SELECT 
+    product_id,
+    product_name,
+    category,
+    price,
+    DENSE_RANK() OVER (
+        PARTITION BY category 
+        ORDER BY price DESC
+    ) AS price_rank
+FROM Products
+ORDER BY category, price_rank;
+/*
+Expected Output:
++------------+---------------------------------+-----------------+----------+------------+
+| product_id | product_name                    | category        | price    | price_rank |
++------------+---------------------------------+-----------------+----------+------------+
+|         12 | System Design Architecture      | Books           |  1200.00 |          1 |
+|         11 | SQL Performance Handbook        | Books           |   650.00 |          2 |
+|          4 | Gaming Laptop                   | Electronics     | 64999.00 |          1 |
+|          3 | Noise-Cancelling Headphones     | Electronics     |  7999.00 |          2 |
+|          2 | Mechanical Keyboard             | Electronics     |  2499.00 |          3 |
+|          1 | Wireless Mouse                  | Electronics     |   799.00 |          4 |
+|          7 | Leather Jacket                  | Fashion         |  4999.00 |          1 |
+|          6 | Slim Fit Denim Jeans            | Fashion         |  1899.00 |          2 |
+|          5 | Cotton T-Shirt                  | Fashion         |   499.00 |          3 |
+|          9 | Microwave Oven                  | Home Appliances |  6499.00 |          1 |
+|         10 | Air Purifier                    | Home Appliances |  4999.00 |          2 |
+|          8 | Stainless Steel Electric Kettle | Home Appliances |  1299.00 |          3 |
++------------+---------------------------------+-----------------+----------+------------+
+12 rows in set
+*/
+
+-- Task 10: Display the previous product price (LAG) and a running total of product prices using window functions.
+SELECT 
+    product_id,
+    product_name,
+    category,
+    price,
+    LAG(price) OVER (
+        PARTITION BY category 
+        ORDER BY price DESC
+    ) AS previous_price,
+    SUM(price) OVER (
+        PARTITION BY category 
+        ORDER BY price DESC
+    ) AS running_total
+FROM Products
+ORDER BY category, price DESC;
+/*
+Expected Output:
++------------+---------------------------------+-----------------+----------+----------------+---------------+
+| product_id | product_name                    | category        | price    | previous_price | running_total |
++------------+---------------------------------+-----------------+----------+----------------+---------------+
+|         12 | System Design Architecture      | Books           |  1200.00 |           NULL |       1200.00 |
+|         11 | SQL Performance Handbook        | Books           |   650.00 |        1200.00 |       1850.00 |
+|          4 | Gaming Laptop                   | Electronics     | 64999.00 |           NULL |      64999.00 |
+|          3 | Noise-Cancelling Headphones     | Electronics     |  7999.00 |       64999.00 |      72998.00 |
+|          2 | Mechanical Keyboard             | Electronics     |  2499.00 |        7999.00 |      75497.00 |
+|          1 | Wireless Mouse                  | Electronics     |   799.00 |        2499.00 |      76296.00 |
+|          7 | Leather Jacket                  | Fashion         |  4999.00 |           NULL |       4999.00 |
+|          6 | Slim Fit Denim Jeans            | Fashion         |  1899.00 |        4999.00 |       6898.00 |
+|          5 | Cotton T-Shirt                  | Fashion         |   499.00 |        1899.00 |       7397.00 |
+|          9 | Microwave Oven                  | Home Appliances |  6499.00 |           NULL |       6499.00 |
+|         10 | Air Purifier                    | Home Appliances |  4999.00 |        6499.00 |      11498.00 |
+|          8 | Stainless Steel Electric Kettle | Home Appliances |  1299.00 |        4999.00 |      12797.00 |
++------------+---------------------------------+-----------------+----------+----------------+---------------+
+12 rows in set
+*/
