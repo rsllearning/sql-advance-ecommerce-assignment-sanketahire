@@ -246,3 +246,82 @@ Expected Output:
 +-------------+-----------------+-----------+----------+---------------------------------+----------+------------+
 24 rows in set
 */
+
+
+-- ========================================================
+-- Section 2: Subqueries
+-- ========================================================
+
+-- Task 4: Find products priced above the average product price.
+SELECT 
+    product_id, 
+    product_name, 
+    category, 
+    price
+FROM Products
+WHERE price > (SELECT AVG(price) FROM Products)
+ORDER BY price DESC;
+/*
+Expected Output: (Overall average price across catalog is ₹8,195.00)
++------------+---------------+-------------+----------+
+| product_id | product_name  | category    | price    |
++------------+---------------+-------------+----------+
+|          4 | Gaming Laptop | Electronics | 64999.00 |
++------------+---------------+-------------+----------+
+1 row in set
+*/
+
+-- Task 5: Display customers whose total purchase amount is greater than the average customer purchase amount.
+SELECT 
+    c.customer_id,
+    c.customer_name,
+    SUM(p.price * o.quantity) AS total_purchase_amount
+FROM Customers c
+INNER JOIN Orders o ON c.customer_id = o.customer_id
+INNER JOIN Products p ON o.product_id = p.product_id
+GROUP BY c.customer_id, c.customer_name
+HAVING total_purchase_amount > (
+    SELECT AVG(customer_total)
+    FROM (
+        SELECT SUM(p2.price * o2.quantity) AS customer_total
+        FROM Orders o2
+        INNER JOIN Products p2 ON o2.product_id = p2.product_id
+        GROUP BY o2.customer_id
+    ) AS customer_spend_summary
+)
+ORDER BY total_purchase_amount DESC;
+/*
+Expected Output: (Average spend across active ordering customers is ₹13,342.50)
++-------------+---------------+-----------------------+
+| customer_id | customer_name | total_purchase_amount |
++-------------+---------------+-----------------------+
+|           3 | Rohan Iyer    |              65798.00 |
++-------------+---------------+-----------------------+
+1 row in set
+*/
+
+-- Task 6: Find the highest-priced product in each category using a correlated subquery.
+SELECT 
+    p1.product_id,
+    p1.product_name,
+    p1.category,
+    p1.price
+FROM Products p1
+WHERE p1.price = (
+    SELECT MAX(p2.price)
+    FROM Products p2
+    WHERE p2.category = p1.category
+)
+ORDER BY p1.category;
+/*
+Expected Output:
++------------+----------------------------+-----------------+----------+
+| product_id | product_name               | category        | price    |
++------------+----------------------------+-----------------+----------+
+|         12 | System Design Architecture | Books           |  1200.00 |
+|          4 | Gaming Laptop              | Electronics     | 64999.00 |
+|          7 | Leather Jacket             | Fashion         |  4999.00 |
+|          9 | Microwave Oven             | Home Appliances |  6499.00 |
++------------+----------------------------+-----------------+----------+
+4 rows in set
+*/

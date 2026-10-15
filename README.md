@@ -245,3 +245,84 @@ erDiagram
 
 * **Execution Screenshot (Mandatory Deliverable 1 - Advanced Join Query):**
   ![Task 3 Execution Output](screenshots/01_advanced_join_task3.png)
+
+---
+
+### Section 2: Subqueries
+
+#### Task 4: Find products priced above the average product price
+* **Description:** Employs an uncorrelated scalar subquery within the `WHERE` clause to compute the company-wide average product unit price (₹8,195.00) dynamically before filtering outer catalog items.
+* **SQL Query:**
+  ```sql
+  SELECT 
+      product_id, 
+      product_name, 
+      category, 
+      price
+  FROM Products
+  WHERE price > (SELECT AVG(price) FROM Products)
+  ORDER BY price DESC;
+  ```
+* **Execution Output:**
+  | product_id | product_name | category | price |
+  | :---: | :--- | :--- | :---: |
+  | 4 | Gaming Laptop | Electronics | 64999.00 |
+  *(1 row returned; catalog arithmetic mean is ₹8,195.00)*
+
+#### Task 5: Display customers whose total purchase amount is greater than the average customer purchase amount
+* **Description:** Leverages an aggregated subquery inside the `HAVING` clause to filter customers whose cumulative spend exceeds the company-wide average customer spend (₹13,342.50).
+* **SQL Query:**
+  ```sql
+  SELECT 
+      c.customer_id,
+      c.customer_name,
+      SUM(p.price * o.quantity) AS total_purchase_amount
+  FROM Customers c
+  INNER JOIN Orders o ON c.customer_id = o.customer_id
+  INNER JOIN Products p ON o.product_id = p.product_id
+  GROUP BY c.customer_id, c.customer_name
+  HAVING total_purchase_amount > (
+      SELECT AVG(customer_total)
+      FROM (
+          SELECT SUM(p2.price * o2.quantity) AS customer_total
+          FROM Orders o2
+          INNER JOIN Products p2 ON o2.product_id = p2.product_id
+          GROUP BY o2.customer_id
+      ) AS customer_spend_summary
+  )
+  ORDER BY total_purchase_amount DESC;
+  ```
+* **Execution Output:**
+  | customer_id | customer_name | total_purchase_amount |
+  | :---: | :--- | :---: |
+  | 3 | Rohan Iyer | 65798.00 |
+  *(1 row returned; average active customer spend is ₹13,342.50)*
+
+#### Task 6: Find the highest-priced product in each category using a correlated subquery
+* **Description:** Executes a correlated subquery where the inner `SELECT MAX(p2.price)` evaluates iteratively for each row in the outer query, binding on `p2.category = p1.category`.
+* **SQL Query:**
+  ```sql
+  SELECT 
+      p1.product_id,
+      p1.product_name,
+      p1.category,
+      p1.price
+  FROM Products p1
+  WHERE p1.price = (
+      SELECT MAX(p2.price)
+      FROM Products p2
+      WHERE p2.category = p1.category
+  )
+  ORDER BY p1.category;
+  ```
+* **Execution Output:**
+  | product_id | product_name | category | price |
+  | :---: | :--- | :--- | :---: |
+  | 12 | System Design Architecture | Books | 1200.00 |
+  | 4 | Gaming Laptop | Electronics | 64999.00 |
+  | 7 | Leather Jacket | Fashion | 4999.00 |
+  | 9 | Microwave Oven | Home Appliances | 6499.00 |
+  *(4 rows returned — one category leader per department)*
+
+* **Execution Screenshot (Mandatory Deliverable 2 - Subquery):**
+  ![Task 6 Execution Output](screenshots/02_subquery_task6.png)
