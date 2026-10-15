@@ -561,3 +561,48 @@ erDiagram
 * **Execution Screenshot (Mandatory Deliverable 4 - Common Table Expressions):**
   ![Common Table Expressions Execution Output](screenshots/04_cte_task11.png)
 
+---
+
+### Section 6: Views
+
+#### Task 13: Create a view that displays products priced above ₹1,000 and retrieve data from the view
+* **Description:** Defines a virtual table (`premium_products`) encapsulating the query logic for catalog items exceeding ₹1,000. Views provide a secure abstraction layer, simplify end-user reporting, and guarantee consistent business logic without duplicating storage.
+* **SQL Query (View Definition & Data Retrieval):**
+  ```sql
+  -- 1. Create or replace the view definition
+  CREATE OR REPLACE VIEW premium_products AS
+  SELECT 
+      product_id,
+      product_name,
+      category,
+      price
+  FROM Products
+  WHERE price > 1000;
+
+  -- 2. Query the view like a regular relational table
+  SELECT 
+      product_id,
+      product_name,
+      category,
+      price
+  FROM premium_products
+  ORDER BY price DESC;
+  ```
+* **Execution Output:**
+  | product_id | product_name | category | price |
+  | :---: | :--- | :--- | :---: |
+  | 4 | Gaming Laptop | Electronics | 64999.00 |
+  | 3 | Noise-Cancelling Headphones | Electronics | 7999.00 |
+  | 9 | Microwave Oven | Home Appliances | 6499.00 |
+  | 7 | Leather Jacket | Fashion | 4999.00 |
+  | 10 | Air Purifier | Home Appliances | 4999.00 |
+  | 2 | Mechanical Keyboard | Electronics | 2499.00 |
+  | 6 | Slim Fit Denim Jeans | Fashion | 1899.00 |
+  | 8 | Stainless Steel Electric Kettle | Home Appliances | 1299.00 |
+  | 12 | System Design Architecture | Books | 1200.00 |
+  *(9 rows returned — products priced strictly above ₹1,000)*
+
+* **Execution Screenshot (Mandatory Deliverable 5 - View):**
+  ![View Execution Output](screenshots/05_view_task13.png)
+
+
