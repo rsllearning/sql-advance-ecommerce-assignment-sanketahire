@@ -27,7 +27,7 @@ sql-advance-ecommerce-assignment-sanketahire/
     ├── 01_advanced_join_task3.png
     ├── 02_subquery_task6.png
     ├── 03_window_functions_task9_10.png
-    ├── 04_cte_task11_12.png
+    ├── 04_cte_task11.png
     ├── 05_view_task13.png
     ├── 06_stored_routine_task16_17.png
     ├── 07_trigger_execution_task19.png
@@ -489,3 +489,75 @@ erDiagram
 
 * **Execution Screenshot (Mandatory Deliverable 3 - Window Function):**
   ![Task 9 and 10 Window Function Execution](screenshots/03_window_functions_task9_10.png)
+
+---
+
+### Section 5: Common Table Expressions (CTEs)
+
+#### Task 11: Create a CTE to display customers whose total purchase amount is above the average
+* **Description:** Employs a non-recursive Common Table Expression (`WITH CustomerSpending AS (...)`) to encapsulate the aggregation of total expenditure per customer. Unlike deeply nested subqueries (as in Task 5), CTEs provide modular, self-documenting logic where intermediate sets can be directly referenced and aggregated (e.g., `(SELECT AVG(total_purchase_amount) FROM CustomerSpending)`) without repeating logic or incurring redundant joins.
+* **SQL Query:**
+  ```sql
+  WITH CustomerSpending AS (
+      SELECT 
+          c.customer_id,
+          c.customer_name,
+          SUM(p.price * o.quantity) AS total_purchase_amount
+      FROM Customers c
+      INNER JOIN Orders o ON c.customer_id = o.customer_id
+      INNER JOIN Products p ON o.product_id = p.product_id
+      GROUP BY c.customer_id, c.customer_name
+  )
+  SELECT 
+      customer_id,
+      customer_name,
+      total_purchase_amount
+  FROM CustomerSpending
+  WHERE total_purchase_amount > (
+      SELECT AVG(total_purchase_amount) 
+      FROM CustomerSpending
+  )
+  ORDER BY total_purchase_amount DESC;
+  ```
+* **Execution Output:**
+  | customer_id | customer_name | total_purchase_amount |
+  | :---: | :--- | :---: |
+  | 3 | Rohan Iyer | 65798.00 |
+  *(1 row returned; average customer spending across active ordering customers is ₹13,342.50)*
+
+#### Task 12: Create a recursive CTE to generate a sequence of numbers from 1 to 10
+* **Description:** Implements a recursive CTE (`WITH RECURSIVE NumberSequence AS (...)`) comprising two foundational components:
+  1. **Anchor Member:** Initial query establishing base value (`SELECT 1 AS n`).
+  2. **Recursive Member:** Iterative query joined to the CTE itself via `UNION ALL` (`SELECT n + 1 FROM NumberSequence WHERE n < 10`) which increments `n` by 1 until the termination condition is satisfied.
+* **SQL Query:**
+  ```sql
+  WITH RECURSIVE NumberSequence AS (
+      -- Anchor Member: Base starting value
+      SELECT 1 AS n
+      UNION ALL
+      -- Recursive Member: Increments until termination condition
+      SELECT n + 1
+      FROM NumberSequence
+      WHERE n < 10
+  )
+  SELECT n
+  FROM NumberSequence;
+  ```
+* **Execution Output:**
+  | n |
+  | :---: |
+  | 1 |
+  | 2 |
+  | 3 |
+  | 4 |
+  | 5 |
+  | 6 |
+  | 7 |
+  | 8 |
+  | 9 |
+  | 10 |
+  *(10 rows generated dynamically)*
+
+* **Execution Screenshot (Mandatory Deliverable 4 - Common Table Expressions):**
+  ![Common Table Expressions Execution Output](screenshots/04_cte_task11.png)
+

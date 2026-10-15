@@ -489,3 +489,71 @@ Expected Output:
 +------------+---------------------------------+-----------------+----------+----------------+---------------+
 12 rows in set
 */
+
+
+-- ========================================================
+-- Section 5: Common Table Expressions (CTEs)
+-- ========================================================
+
+-- Task 11: Create a CTE to display customers whose total purchase amount is above the average.
+WITH CustomerSpending AS (
+    SELECT 
+        c.customer_id,
+        c.customer_name,
+        SUM(p.price * o.quantity) AS total_purchase_amount
+    FROM Customers c
+    INNER JOIN Orders o ON c.customer_id = o.customer_id
+    INNER JOIN Products p ON o.product_id = p.product_id
+    GROUP BY c.customer_id, c.customer_name
+)
+SELECT 
+    customer_id,
+    customer_name,
+    total_purchase_amount
+FROM CustomerSpending
+WHERE total_purchase_amount > (
+    SELECT AVG(total_purchase_amount) 
+    FROM CustomerSpending
+)
+ORDER BY total_purchase_amount DESC;
+/*
+Expected Output: (Average customer spending across active customers is ₹13,342.50)
++-------------+---------------+-----------------------+
+| customer_id | customer_name | total_purchase_amount |
++-------------+---------------+-----------------------+
+|           3 | Rohan Iyer    |              65798.00 |
++-------------+---------------+-----------------------+
+1 row in set
+*/
+
+-- Task 12: Create a recursive CTE to generate a sequence of numbers from 1 to 10.
+WITH RECURSIVE NumberSequence AS (
+    -- Anchor Member: Starting number
+    SELECT 1 AS n
+    UNION ALL
+    -- Recursive Member: Increment by 1 until termination condition
+    SELECT n + 1
+    FROM NumberSequence
+    WHERE n < 10
+)
+SELECT n
+FROM NumberSequence;
+/*
+Expected Output:
++------+
+| n    |
++------+
+|    1 |
+|    2 |
+|    3 |
+|    4 |
+|    5 |
+|    6 |
+|    7 |
+|    8 |
+|    9 |
+|   10 |
++------+
+10 rows in set
+*/
+
