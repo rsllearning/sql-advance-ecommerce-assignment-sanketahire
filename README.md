@@ -659,5 +659,92 @@ erDiagram
 * **Execution Screenshot (Mandatory Deliverable 6 - EXPLAIN Query Plan):**
   ![EXPLAIN Query Plan Execution Output](screenshots/06_explain_query_plan_task15.png)
 
+---
+
+### Section 8: Stored Procedures and Functions
+
+#### Task 16: Create a stored procedure to retrieve products by category
+* **Description:** Implements a parameterized stored procedure (`GetProductsByCategory`) accepting an `IN` parameter `p_category VARCHAR(50)`. Stored procedures are precompiled on the database server, enhancing performance, encapsulating operational business workflows, preventing SQL injection, and eliminating network latency caused by transmitting repetitive query text.
+* **SQL Routine Definition & Invocation:**
+  ```sql
+  -- Drop existing routine if present
+  DROP PROCEDURE IF EXISTS GetProductsByCategory;
+
+  -- Create stored procedure
+  DELIMITER //
+  CREATE PROCEDURE GetProductsByCategory(IN p_category VARCHAR(50))
+  BEGIN
+      SELECT 
+          product_id,
+          product_name,
+          category,
+          price
+      FROM Products
+      WHERE category = p_category
+      ORDER BY price DESC;
+  END //
+  DELIMITER ;
+
+  -- Execute stored procedure
+  CALL GetProductsByCategory('Electronics');
+  ```
+* **Execution Output:**
+  | product_id | product_name | category | price |
+  | :---: | :--- | :--- | :---: |
+  | 4 | Gaming Laptop | Electronics | 64999.00 |
+  | 3 | Noise-Cancelling Headphones | Electronics | 7999.00 |
+  | 2 | Mechanical Keyboard | Electronics | 2499.00 |
+  | 1 | Wireless Mouse | Electronics | 799.00 |
+  *(4 rows returned — sorted by price descending)*
+
+#### Task 17: Create a function to calculate the total price of an order (price × quantity)
+* **Description:** Defines a deterministic scalar function (`CalculateOrderTotal`) taking unit price and item quantity and returning the extended line-item total (`DECIMAL(10,2)`). Unlike stored procedures, database functions can be invoked directly inside SQL `SELECT`, `WHERE`, and `HAVING` expressions.
+* **SQL Routine Definition & Invocation:**
+  ```sql
+  -- Drop existing function if present
+  DROP FUNCTION IF EXISTS CalculateOrderTotal;
+
+  -- Create stored function
+  DELIMITER //
+  CREATE FUNCTION CalculateOrderTotal(
+      p_price DECIMAL(10, 2),
+      p_quantity INT
+  )
+  RETURNS DECIMAL(10, 2)
+  DETERMINISTIC
+  NO SQL
+  BEGIN
+      RETURN p_price * p_quantity;
+  END //
+  DELIMITER ;
+
+  -- Query utilizing the custom function inline
+  SELECT 
+      o.order_id,
+      c.customer_name,
+      p.product_name,
+      p.price,
+      o.quantity,
+      CalculateOrderTotal(p.price, o.quantity) AS computed_total
+  FROM Orders o
+  INNER JOIN Customers c ON o.customer_id = c.customer_id
+  INNER JOIN Products p ON o.product_id = p.product_id
+  ORDER BY o.order_id
+  LIMIT 5;
+  ```
+* **Execution Output:**
+  | order_id | customer_name | product_name | price | quantity | computed_total |
+  | :---: | :--- | :--- | :---: | :---: | :---: |
+  | 1 | Aarav Patel | Wireless Mouse | 799.00 | 2 | 1598.00 |
+  | 2 | Aarav Patel | Mechanical Keyboard | 2499.00 | 1 | 2499.00 |
+  | 3 | Priya Sharma | Noise-Cancelling Headphones | 7999.00 | 1 | 7999.00 |
+  | 4 | Priya Sharma | Cotton T-Shirt | 499.00 | 3 | 1497.00 |
+  | 5 | Rohan Iyer | Gaming Laptop | 64999.00 | 1 | 64999.00 |
+  *(5 sample rows returned — custom function calculates row-level totals seamlessly)*
+
+* **Execution Screenshot (Mandatory Deliverable 7 - Stored Routine):**
+  ![Stored Routine Execution Output](screenshots/07_stored_routine_task16_17.png)
+
+
 
 
