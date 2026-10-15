@@ -325,3 +325,92 @@ Expected Output:
 +------------+----------------------------+-----------------+----------+
 4 rows in set
 */
+
+
+-- ========================================================
+-- Section 3: Set Operations
+-- ========================================================
+
+-- Task 7: Combine products from two different categories using UNION.
+SELECT 
+    product_id, 
+    product_name, 
+    category, 
+    price
+FROM Products
+WHERE category = 'Electronics'
+UNION
+SELECT 
+    product_id, 
+    product_name, 
+    category, 
+    price
+FROM Products
+WHERE category = 'Fashion'
+ORDER BY category, price;
+/*
+Expected Output:
++------------+-----------------------------+-------------+----------+
+| product_id | product_name                | category    | price    |
++------------+-----------------------------+-------------+----------+
+|          1 | Wireless Mouse              | Electronics |   799.00 |
+|          2 | Mechanical Keyboard         | Electronics |  2499.00 |
+|          3 | Noise-Cancelling Headphones | Electronics |  7999.00 |
+|          4 | Gaming Laptop               | Electronics | 64999.00 |
+|          5 | Cotton T-Shirt              | Fashion     |   499.00 |
+|          6 | Slim Fit Denim Jeans        | Fashion     |  1899.00 |
+|          7 | Leather Jacket              | Fashion     |  4999.00 |
++------------+-----------------------------+-------------+----------+
+7 rows in set
+*/
+
+-- Task 8: Write MySQL alternatives for INTERSECT and EXCEPT using INNER JOIN and LEFT JOIN.
+
+-- 8A: INTERSECT Alternative using INNER JOIN
+-- Finding products common to both sets: Category is 'Electronics' AND Price > ₹2,000
+SELECT DISTINCT 
+    p1.product_id, 
+    p1.product_name, 
+    p1.category, 
+    p1.price
+FROM Products p1
+INNER JOIN Products p2 
+    ON p1.product_id = p2.product_id
+WHERE p1.category = 'Electronics'
+  AND p2.price > 2000
+ORDER BY p1.price;
+/*
+Expected Output:
++------------+-----------------------------+-------------+----------+
+| product_id | product_name                | category    | price    |
++------------+-----------------------------+-------------+----------+
+|          2 | Mechanical Keyboard         | Electronics |  2499.00 |
+|          3 | Noise-Cancelling Headphones | Electronics |  7999.00 |
+|          4 | Gaming Laptop               | Electronics | 64999.00 |
++------------+-----------------------------+-------------+----------+
+3 rows in set
+*/
+
+-- 8B: EXCEPT Alternative using LEFT JOIN ... WHERE right IS NULL
+-- Finding products present in 'Electronics' EXCEPT those with Price > ₹2,000 (i.e., Electronics <= ₹2,000)
+SELECT DISTINCT 
+    p1.product_id, 
+    p1.product_name, 
+    p1.category, 
+    p1.price
+FROM Products p1
+LEFT JOIN Products p2 
+    ON p1.product_id = p2.product_id
+   AND p2.price > 2000
+WHERE p1.category = 'Electronics'
+  AND p2.product_id IS NULL
+ORDER BY p1.price;
+/*
+Expected Output:
++------------+----------------+-------------+--------+
+| product_id | product_name   | category    | price  |
++------------+----------------+-------------+--------+
+|          1 | Wireless Mouse | Electronics | 799.00 |
++------------+----------------+-------------+--------+
+1 row in set
+*/
