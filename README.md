@@ -126,4 +126,122 @@ erDiagram
 ---
 
 ## Query Catalog & Execution Results
-*(This catalog will expand incrementally as each section's tasks are implemented and verified).*
+
+### Section 1: Advanced Joins
+
+#### Task 1: Display each customer along with the products they ordered
+* **Description:** Multi-table relational query joining `Customers`, `Orders`, and `Products` to project purchase history for active customers.
+* **SQL Query:**
+  ```sql
+  SELECT 
+      c.customer_id,
+      c.customer_name,
+      p.product_name,
+      p.category,
+      o.quantity,
+      o.order_date
+  FROM Customers c
+  INNER JOIN Orders o ON c.customer_id = o.customer_id
+  INNER JOIN Products p ON o.product_id = p.product_id
+  ORDER BY c.customer_id, o.order_id;
+  ```
+* **Execution Output:**
+  | customer_id | customer_name | product_name | category | quantity | order_date |
+  | :---: | :--- | :--- | :--- | :---: | :---: |
+  | 1 | Aarav Patel | Wireless Mouse | Electronics | 2 | 2024-02-01 |
+  | 1 | Aarav Patel | Mechanical Keyboard | Electronics | 1 | 2024-02-15 |
+  | 2 | Priya Sharma | Noise-Cancelling Headphones | Electronics | 1 | 2024-02-20 |
+  | 2 | Priya Sharma | Cotton T-Shirt | Fashion | 3 | 2024-03-01 |
+  | 2 | Priya Sharma | Mechanical Keyboard | Electronics | 1 | 2024-05-05 |
+  | 3 | Rohan Iyer | Gaming Laptop | Electronics | 1 | 2024-03-05 |
+  | 3 | Rohan Iyer | Wireless Mouse | Electronics | 1 | 2024-03-10 |
+  | 4 | Sneha Kulkarni | Slim Fit Denim Jeans | Fashion | 2 | 2024-03-12 |
+  | 4 | Sneha Kulkarni | Stainless Steel Electric Kettle | Home Appliances | 1 | 2024-03-18 |
+  | 4 | Sneha Kulkarni | Noise-Cancelling Headphones | Electronics | 1 | 2024-05-10 |
+  | 5 | Vikram Malhotra | Leather Jacket | Fashion | 1 | 2024-03-22 |
+  | 5 | Vikram Malhotra | Microwave Oven | Home Appliances | 1 | 2024-03-28 |
+  | 6 | Ananya Roy | SQL Performance Handbook | Books | 2 | 2024-04-02 |
+  | 6 | Ananya Roy | System Design Architecture | Books | 1 | 2024-04-05 |
+  | 7 | Rajesh Verma | Mechanical Keyboard | Electronics | 2 | 2024-04-08 |
+  | 7 | Rajesh Verma | Cotton T-Shirt | Fashion | 1 | 2024-04-12 |
+  | 8 | Meera Nair | Air Purifier | Home Appliances | 1 | 2024-04-15 |
+  | 8 | Meera Nair | Noise-Cancelling Headphones | Electronics | 1 | 2024-04-18 |
+  | 9 | Aditya Joshi | Slim Fit Denim Jeans | Fashion | 1 | 2024-04-20 |
+  | 9 | Aditya Joshi | SQL Performance Handbook | Books | 1 | 2024-04-25 |
+  | 10 | Neha Gupta | Stainless Steel Electric Kettle | Home Appliances | 2 | 2024-04-28 |
+  | 10 | Neha Gupta | Wireless Mouse | Electronics | 1 | 2024-05-02 |
+  *(22 rows returned)*
+
+#### Task 2: Display all possible combinations of customers and products using a CROSS JOIN
+* **Description:** Computes the Cartesian Product ($12 \text{ Customers} \times 12 \text{ Products} = 144 \text{ rows}$) generating every potential customer-product pair without a join filter.
+* **SQL Query:**
+  ```sql
+  SELECT 
+      c.customer_id,
+      c.customer_name,
+      p.product_id,
+      p.product_name,
+      p.category,
+      p.price
+  FROM Customers c
+  CROSS JOIN Products p
+  ORDER BY c.customer_id, p.product_id;
+  ```
+* **Execution Output (Sample First 5 of 144 Rows):**
+  | customer_id | customer_name | product_id | product_name | category | price |
+  | :---: | :--- | :---: | :--- | :--- | :---: |
+  | 1 | Aarav Patel | 1 | Wireless Mouse | Electronics | 799.00 |
+  | 1 | Aarav Patel | 2 | Mechanical Keyboard | Electronics | 2499.00 |
+  | 1 | Aarav Patel | 3 | Noise-Cancelling Headphones | Electronics | 7999.00 |
+  | 1 | Aarav Patel | 4 | Gaming Laptop | Electronics | 64999.00 |
+  | 1 | Aarav Patel | 5 | Cotton T-Shirt | Fashion | 499.00 |
+  *(144 rows returned total)*
+
+#### Task 3: Display all customers and their orders, including customers who have not placed any orders
+* **Description:** Employs a `LEFT JOIN` starting from `Customers` to guarantee preservation of every customer record. Inactive customers (`customer_id` 11 and 12) evaluate to `NULL` for order and product columns.
+* **SQL Query:**
+  ```sql
+  SELECT 
+      c.customer_id,
+      c.customer_name,
+      c.city,
+      o.order_id,
+      p.product_name,
+      o.quantity,
+      o.order_date
+  FROM Customers c
+  LEFT JOIN Orders o ON c.customer_id = o.customer_id
+  LEFT JOIN Products p ON o.product_id = p.product_id
+  ORDER BY c.customer_id, o.order_id;
+  ```
+* **Execution Output:**
+  | customer_id | customer_name | city | order_id | product_name | quantity | order_date |
+  | :---: | :--- | :--- | :---: | :--- | :---: | :---: |
+  | 1 | Aarav Patel | Mumbai | 1 | Wireless Mouse | 2 | 2024-02-01 |
+  | 1 | Aarav Patel | Mumbai | 2 | Mechanical Keyboard | 1 | 2024-02-15 |
+  | 2 | Priya Sharma | Delhi | 3 | Noise-Cancelling Headphones | 1 | 2024-02-20 |
+  | 2 | Priya Sharma | Delhi | 4 | Cotton T-Shirt | 3 | 2024-03-01 |
+  | 2 | Priya Sharma | Delhi | 21 | Mechanical Keyboard | 1 | 2024-05-05 |
+  | 3 | Rohan Iyer | Bengaluru | 5 | Gaming Laptop | 1 | 2024-03-05 |
+  | 3 | Rohan Iyer | Bengaluru | 6 | Wireless Mouse | 1 | 2024-03-10 |
+  | 4 | Sneha Kulkarni | Pune | 7 | Slim Fit Denim Jeans | 2 | 2024-03-12 |
+  | 4 | Sneha Kulkarni | Pune | 8 | Stainless Steel Electric Kettle | 1 | 2024-03-18 |
+  | 4 | Sneha Kulkarni | Pune | 22 | Noise-Cancelling Headphones | 1 | 2024-05-10 |
+  | 5 | Vikram Malhotra | Mumbai | 9 | Leather Jacket | 1 | 2024-03-22 |
+  | 5 | Vikram Malhotra | Mumbai | 10 | Microwave Oven | 1 | 2024-03-28 |
+  | 6 | Ananya Roy | Kolkata | 11 | SQL Performance Handbook | 2 | 2024-04-02 |
+  | 6 | Ananya Roy | Kolkata | 12 | System Design Architecture | 1 | 2024-04-05 |
+  | 7 | Rajesh Verma | Hyderabad | 13 | Mechanical Keyboard | 2 | 2024-04-08 |
+  | 7 | Rajesh Verma | Hyderabad | 14 | Cotton T-Shirt | 1 | 2024-04-12 |
+  | 8 | Meera Nair | Chennai | 15 | Air Purifier | 1 | 2024-04-15 |
+  | 8 | Meera Nair | Chennai | 16 | Noise-Cancelling Headphones | 1 | 2024-04-18 |
+  | 9 | Aditya Joshi | Pune | 17 | Slim Fit Denim Jeans | 1 | 2024-04-20 |
+  | 9 | Aditya Joshi | Pune | 18 | SQL Performance Handbook | 1 | 2024-04-25 |
+  | 10 | Neha Gupta | Delhi | 19 | Stainless Steel Electric Kettle | 2 | 2024-04-28 |
+  | 10 | Neha Gupta | Delhi | 20 | Wireless Mouse | 1 | 2024-05-02 |
+  | **11** | **Siddharth Rao** | **Bengaluru** | **NULL** | **NULL** | **NULL** | **NULL** |
+  | **12** | **Pooja Desai** | **Ahmedabad** | **NULL** | **NULL** | **NULL** | **NULL** |
+  *(24 rows returned)*
+
+* **Execution Screenshot (Mandatory Deliverable 1 - Advanced Join Query):**
+  ![Task 3 Execution Output](screenshots/01_advanced_join_task3.png)
