@@ -745,6 +745,77 @@ erDiagram
 * **Execution Screenshot (Mandatory Deliverable 7 - Stored Routine):**
   ![Stored Routine Execution Output](screenshots/07_stored_routine_task16_17.png)
 
+---
+
+### Section 9: Transactions
+
+#### Task 18: Write a transaction that updates a product's price and demonstrate the use of COMMIT and ROLLBACK
+* **Description:** Demonstrates transaction control language (TCL) commands in MySQL InnoDB, verifying the **ACID** (Atomicity, Consistency, Isolation, Durability) guarantees of relational database transactions:
+  * **Atomicity & ROLLBACK:** Ensures all operations succeed or all are discarded. An in-flight `UPDATE` is undone cleanly using `ROLLBACK`, restoring original database state without disk mutation.
+  * **Durability & COMMIT:** Permanently writes verified modifications to disk storage (InnoDB redo logs and tablespaces) via `COMMIT`.
+
+* **Part A: ROLLBACK Execution (Undoing uncommitted changes):**
+  ```sql
+  -- 1. Begin atomic transaction
+  START TRANSACTION;
+
+  -- 2. Modify price within uncommitted transaction scope
+  UPDATE Products 
+  SET price = 999.00 
+  WHERE product_id = 1;
+
+  -- 3. Verify modification in local transaction view
+  SELECT product_id, product_name, price 
+  FROM Products 
+  WHERE product_id = 1;
+
+  -- 4. Cancel and discard all pending transaction operations
+  ROLLBACK;
+
+  -- 5. Confirm price reverted to original baseline
+  SELECT product_id, product_name, price 
+  FROM Products 
+  WHERE product_id = 1;
+  ```
+* **Execution Output (Part A - ROLLBACK Verification):**
+  * *Inside Transaction:*
+    | product_id | product_name | price |
+    | :---: | :--- | :---: |
+    | 1 | Wireless Mouse | 999.00 |
+  * *After ROLLBACK:*
+    | product_id | product_name | price |
+    | :---: | :--- | :---: |
+    | 1 | Wireless Mouse | **799.00** |
+    *(Price restored to ₹799.00 baseline — zero data corruption)*
+
+* **Part B: COMMIT Execution (Persisting changes permanently):**
+  ```sql
+  -- 1. Begin atomic transaction
+  START TRANSACTION;
+
+  -- 2. Apply authorized price update
+  UPDATE Products 
+  SET price = 849.00 
+  WHERE product_id = 1;
+
+  -- 3. Commit transaction permanently
+  COMMIT;
+
+  -- 4. Verify permanent persistence on disk
+  SELECT product_id, product_name, price 
+  FROM Products 
+  WHERE product_id = 1;
+  ```
+* **Execution Output (Part B - COMMIT Verification):**
+  | product_id | product_name | price |
+  | :---: | :--- | :---: |
+  | 1 | Wireless Mouse | **849.00** |
+  *(Price permanently updated to ₹849.00 across all concurrent sessions)*
+
+* **Execution Screenshot (Mandatory Deliverable 8 - Transaction COMMIT / ROLLBACK):**
+  ![Transaction Execution Output](screenshots/08_transaction_rollback_commit_task18.png)
+
+
 
 
 

@@ -728,5 +728,78 @@ Expected Output:
 */
 
 
+-- ========================================================
+-- Section 9: Transactions
+-- ========================================================
+
+-- Task 18: Write a transaction that updates a product's price and demonstrate the use of COMMIT and ROLLBACK.
+
+-- Part A: Demonstration of ROLLBACK (Undoing uncommitted modifications)
+START TRANSACTION;
+
+-- Attempt price adjustment for Wireless Mouse (product_id = 1)
+UPDATE Products 
+SET price = 999.00 
+WHERE product_id = 1;
+
+-- Inspect pending modification within active transaction scope
+SELECT product_id, product_name, price 
+FROM Products 
+WHERE product_id = 1;
+/*
+Expected Output (Inside Transaction):
++------------+----------------+--------+
+| product_id | product_name   | price  |
++------------+----------------+--------+
+|          1 | Wireless Mouse | 999.00 |
++------------+----------------+--------+
+1 row in set
+*/
+
+-- Rollback the transaction to revert all uncommitted modifications
+ROLLBACK;
+
+-- Verify that the price has reverted to its original state (₹799.00)
+SELECT product_id, product_name, price 
+FROM Products 
+WHERE product_id = 1;
+/*
+Expected Output (After ROLLBACK):
++------------+----------------+--------+
+| product_id | product_name   | price  |
++------------+----------------+--------+
+|          1 | Wireless Mouse | 799.00 |
++------------+----------------+--------+
+1 row in set
+*/
+
+
+-- Part B: Demonstration of COMMIT (Persisting changes permanently)
+START TRANSACTION;
+
+-- Update product price to an authorized new price point
+UPDATE Products 
+SET price = 849.00 
+WHERE product_id = 1;
+
+-- Permanently commit the changes to disk
+COMMIT;
+
+-- Verify that the updated price is permanently persisted
+SELECT product_id, product_name, price 
+FROM Products 
+WHERE product_id = 1;
+/*
+Expected Output (After COMMIT):
++------------+----------------+--------+
+| product_id | product_name   | price  |
++------------+----------------+--------+
+|          1 | Wireless Mouse | 849.00 |
++------------+----------------+--------+
+1 row in set
+*/
+
+
+
 
 
