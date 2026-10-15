@@ -29,10 +29,10 @@ sql-advance-ecommerce-assignment-sanketahire/
     ├── 03_window_functions_task9_10.png
     ├── 04_cte_task11.png
     ├── 05_view_task13.png
-    ├── 06_stored_routine_task16_17.png
-    ├── 07_trigger_execution_task19.png
+    ├── 06_explain_query_plan_task15.png
+    ├── 07_stored_routine_task16_17.png
     ├── 08_transaction_rollback_commit_task18.png
-    └── 09_explain_query_plan_task15.png
+    └── 09_trigger_execution_task19.png
 ```
 
 ---
@@ -604,5 +604,60 @@ erDiagram
 
 * **Execution Screenshot (Mandatory Deliverable 5 - View):**
   ![View Execution Output](screenshots/05_view_task13.png)
+
+---
+
+### Section 7: Indexes and Query Performance
+
+#### Task 14: Create an index on the category column of the Products table
+* **Description:** Establishes a secondary B-Tree index (`idx_products_category`) on `Products(category)`. Secondary indexes drastically optimize lookups, equality checks, and grouping operations on frequently filtered dimensions without scanning unnecessary data blocks.
+* **SQL Query (Index Creation & Verification):**
+  ```sql
+  -- 1. Create secondary B-Tree index on category
+  CREATE INDEX idx_products_category ON Products(category);
+
+  -- 2. Inspect index metadata from table catalog
+  SHOW INDEX FROM Products WHERE Key_name = 'idx_products_category';
+  ```
+* **Execution Output:**
+  | Table | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Index_type | Visible |
+  | :--- | :---: | :--- | :---: | :--- | :---: | :---: | :--- | :---: |
+  | Products | 1 | idx_products_category | 1 | category | A | 4 | BTREE | YES |
+  *(1 row returned — confirms secondary B-Tree index is active and visible to optimizer)*
+
+#### Task 15: Use EXPLAIN to analyze a query that filters products by category
+* **Description:** Executes `EXPLAIN` on an indexed category filter query to inspect the MySQL query execution plan and prove index utilization over a costly full table scan (`ALL`).
+* **SQL Query:**
+  ```sql
+  -- Query Plan Inspection
+  EXPLAIN SELECT * FROM Products WHERE category = 'Electronics';
+
+  -- Executing the optimized indexed query
+  SELECT * FROM Products WHERE category = 'Electronics';
+  ```
+* **Execution Plan Analysis Output:**
+  | id | select_type | table | partitions | type | possible_keys | key | key_len | ref | rows | filtered | Extra |
+  | :---: | :--- | :--- | :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+  | 1 | SIMPLE | Products | NULL | **ref** | idx_products_category | **idx_products_category** | 202 | const | **4** | 100.00 | NULL |
+
+* **Query Execution Output:**
+  | product_id | product_name | category | price | created_date |
+  | :---: | :--- | :--- | :---: | :---: |
+  | 1 | Wireless Mouse | Electronics | 799.00 | 2024-01-15 |
+  | 2 | Mechanical Keyboard | Electronics | 2499.00 | 2024-02-10 |
+  | 3 | Noise-Cancelling Headphones | Electronics | 7999.00 | 2024-03-05 |
+  | 4 | Gaming Laptop | Electronics | 64999.00 | 2024-04-12 |
+  *(4 rows returned directly via index ref lookup)*
+
+* **Query Plan Diagnostics & Optimization Insights:**
+  * **Access Type (`type = ref`):** Demonstrates indexed non-unique lookup rather than a full table scan (`ALL`), dramatically minimizing page I/O.
+  * **Selected Key (`key = idx_products_category`):** The optimizer chose the designated B-Tree category index.
+  * **Key Length (`key_len = 202`):** Reflects `VARCHAR(50)` in `utf8mb4` encoding ($50 \times 4\text{ bytes} + 2\text{ bytes length prefix} = 202\text{ bytes}$).
+  * **Reference (`ref = const`):** Compares the index against a literal search constant (`'Electronics'`).
+  * **Estimated Rows (`rows = 4`):** The optimizer accurately targets only the 4 qualifying rows instead of evaluating the entire 12-row table.
+
+* **Execution Screenshot (Mandatory Deliverable 6 - EXPLAIN Query Plan):**
+  ![EXPLAIN Query Plan Execution Output](screenshots/06_explain_query_plan_task15.png)
+
 
 

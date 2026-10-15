@@ -601,3 +601,51 @@ Expected Output:
 */
 
 
+-- ========================================================
+-- Section 7: Indexes and Query Performance
+-- ========================================================
+
+-- Task 14: Create an index on the category column of the Products table.
+CREATE INDEX idx_products_category ON Products(category);
+
+-- Verify Index Creation
+SHOW INDEX FROM Products WHERE Key_name = 'idx_products_category';
+/*
+Expected Output:
++----------+------------+-----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| Table    | Non_unique | Key_name              | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |
++----------+------------+-----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+| Products |          1 | idx_products_category |            1 | category    | A         |           4 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |
++----------+------------+-----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+
+1 row in set
+*/
+
+-- Task 15: Use EXPLAIN to analyze a query that filters products by category.
+EXPLAIN SELECT * FROM Products WHERE category = 'Electronics';
+/*
+Expected Output:
++----+-------------+----------+------------+------+-----------------------+-----------------------+---------+-------+------+----------+-------+
+| id | select_type | table    | partitions | type | possible_keys         | key                   | key_len | ref   | rows | filtered | Extra |
++----+-------------+----------+------------+------+-----------------------+-----------------------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | Products | NULL       | ref  | idx_products_category | idx_products_category | 202     | const |    4 |   100.00 | NULL  |
++----+-------------+----------+------------+------+-----------------------+-----------------------+---------+-------+------+----------+-------+
+1 row in set
+*/
+
+-- Execution of the optimized indexed query
+SELECT * FROM Products WHERE category = 'Electronics';
+/*
+Expected Output:
++------------+-----------------------------+-------------+----------+--------------+
+| product_id | product_name                | category    | price    | created_date |
++------------+-----------------------------+-------------+----------+--------------+
+|          1 | Wireless Mouse              | Electronics |   799.00 | 2024-01-15   |
+|          2 | Mechanical Keyboard         | Electronics |  2499.00 | 2024-02-10   |
+|          3 | Noise-Cancelling Headphones | Electronics |  7999.00 | 2024-03-05   |
+|          4 | Gaming Laptop               | Electronics | 64999.00 | 2024-04-12   |
++------------+-----------------------------+-------------+----------+--------------+
+4 rows in set
+*/
+
+
+
